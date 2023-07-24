@@ -1,0 +1,30 @@
+data = pd.read_hdf("C:\\Users\\A\\Desktop\\22\\closePrice.h5")
+df = pd.DataFrame(data)
+df
+data = pd.read_hdf("C:\\Users\\A\\Desktop\\22\\istrade.h5")
+df1 = pd.DataFrame(data)
+df1
+time=df1.index
+allmoney=1
+#weight=np.full(20, 1/20)
+firstsum=1/((df1.iloc[0,:]==1).sum())
+preweight=np.full(5285,firstsum)
+weight=preweight*df1.iloc[0,:]
+daily_rev=[]
+for i in range(1,df1.shape[0]):
+    open_sum=(df1.iloc[i,:]==1).sum()
+    allmoney=1
+    openlist=[i for i in range(5285)]
+    for j in range(5285):
+        if(df1.iloc[i,j]==0):
+            allmoney=1-weight[j]
+            openlist.remove(j)
+    for j in openlist:
+        weight[j]=allmoney/open_sum
+    rev_rate=((((df.iloc[i,:]-df.iloc[i-1,:])/df.iloc[i-1,:]).apply(np.log1p))*weight).sum()
+    daily_rev.append(rev_rate)
+print(pd.DataFrame(daily_rev))
+
+import matplotlib.pyplot as plt
+plt.plot(daily_rev)
+plt.show()
