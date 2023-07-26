@@ -1,0 +1,94 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import copy 
+
+data = pd.read_hdf("C:\\Users\\A\\Desktop\\index_weight_pyd\\000905.h5")
+df1 = pd.DataFrame(data)
+df1=df1.fillna(0)
+df1
+
+data = pd.read_hdf("C:\\Users\\A\\Desktop\\index_price_pyd\\000905\\closeIndex.h5")
+df2 = pd.DataFrame(data)
+df2
+
+data = pd.read_hdf("C:\\Users\\A\\Desktop\\22\\isLimit.h5")
+isLimit = pd.DataFrame(data)
+isLimit
+
+data = pd.read_csv("C:\\Users\\A\\Desktop\\chose_all.csv")
+choseall = pd.DataFrame(data)
+choseall1=choseall.iloc[:,1:]
+choseall1.index=choseall.iloc[:,0]
+choseall1=choseall1*100
+choseall1.sum(axis=1)
+
+def traceback(stock,stock_weight,index,cost_rate):
+    daily_revenue=[]
+    for i in range(1,stock.shape[0]):
+        if stock_weight.iloc[i,:].sum()==0:
+            daily_revenue.append(0)
+        else:
+            stock_rev=stock_revenue(stock,stock_weight,i,cost_rate)
+            index_rev=index_revenue(index,i)
+            rev_rate=np.log(stock_rev-index_rev+1)
+            daily_revenue.append(rev_rate)
+    return daily_revenue
+
+  def stock_revenue(stock,stock_weight,i,cost_rate):
+    cost=stock_weight.iloc[i,:]*0.01-stock_weight.iloc[i-1,:]*0.01
+    cost=cost.abs()
+    return ((stock.iloc[i,:]/stock.iloc[i-1,:]-1)*stock_weight.iloc[i-1,:]*0.01-cost*cost_rate).sum()
+
+  def index_revenue(index,i):
+    return index.iloc[i,0]/index.iloc[i-1,0]-1
+
+def cal_accumulate(rate):
+    acumulate_zhishu_1=[]
+    for i in range(len(rate)):
+        a=pd.array(rate[:i]).sum()
+        acumulate_zhishu_1.append(a)
+    return acumulate_zhishu_1
+
+  def find_min100(i,islimit,stock_price):
+    m =list(stock_price.iloc[i,:]/stock_price.iloc[i-1,:]-1)
+    t = copy.deepcopy(m)
+    # 求m个最大的数值及其索引
+    k=0
+    j=0
+    min_index = []
+    while k<100 and j<5285:
+        number = min(t)
+        index = t.index(number)
+        t[index] = 10000
+        j=j+1
+        if islimit.iloc[i,index]==0:  
+            min_index.append(index)
+            k=k+1
+    t = []
+    return min_index,k    
+    
+def weight_matrix():
+    weight = pd.DataFrame(np.zeros((4024,5285)),index=df.index,columns=df.columns)
+    for i in range(weight.shape[0]):
+        min100,num=find_min100(i,isLimit,df)
+        for index in min100:
+            weight.iloc[i,index]=(1/num)*100
+    print("矩阵构建完毕")
+    return weight
+            
+def picture(accumulate_rev):
+    time=df.index
+    fig, ax = plt.subplots()
+    ax.plot(time[1:], accumulate_rev, label='strategy') 
+    #ax.plot(time[1:], acc_nocost, label='strategy',color='black') 
+    plt.show()
+
+  weight2=weight_matrix()
+result1=traceback(df,weight1,df2,0) #不算成本，算涨跌停
+result2=traceback(df,weight2,df2,0) #不算成本和涨跌停
+accumulate_rev1=cal_accumulate(result1)
+accumulate_rev2=cal_accumulate(result2)
+picture(accumulate_rev1,accumulate_rev2)
+
+  
